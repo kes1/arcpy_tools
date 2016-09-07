@@ -6,7 +6,7 @@ To use, download or clone this repository and use directly on a computer with Ar
 ## Portal Tools
 
 * Add Item
-Adds layers from an ArcGIS MapService as feature layer items to ArcGIS Portal. This can provide layer by layer access to mapservice layers, similar to when accessing a Feature Service.
+Adds layers from an ArcGIS MapService as feature layer items to ArcGIS Portal. This can provide layer by layer access to mapservice layers, similar to when accessing a Feature Service.  Uses integrated windows authentication, based upon [this tool](https://geonet.esri.com/docs/DOC-8394) from ESRI.
 
 *Requires* [Python for Windows Extension](https://sourceforge.net/projects/pywin32/)
 
