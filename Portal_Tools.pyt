@@ -1,4 +1,4 @@
-import arcpy, re
+import arcpy, re, os, urllib, json
 
 class Toolbox(object):
     def __init__(self):
@@ -41,7 +41,6 @@ class AddItems(object):
         direction="Input"
         ))
 
-        # String for ArcGIS Portal, including the web adapter.  Will authenticate using Integrated Windows Authentication.
         params.append(arcpy.Parameter(
         displayName="Item Tags",
         name = "inTagsCSV",
@@ -85,5 +84,48 @@ class AddItems(object):
         except ImportError:
             arcpy.AddError("Cannot load Win32 module.  Please install to enable integrated authentication with your ArcGIS Server")
             return
+
+        # Parameters
+        serviceURL  = parameters[0].valueAsText
+        portalURL = parameters[1].valueAsText
+        tags = parameters[2].valueAsText
+
+        # Uses win32 client to dispatch the request which will use integrated authentication,
+        # authenticating with portal and ArcGIS Server as the user running the script.
+
+        h = win32com.client.Dispatch('WinHTTP.WinHTTPRequest.5.1')
+        h.SetAutoLogonPolicy(0)
+        h.SetProxy(0)
+        portalUser = os.getenv('username') + "@" + os.getenv('userdomain')
+        params = {'f': 'json'}
+        req = serviceURL  + "?" + urllib.urlencode(params)
+
+        h.Open("GET",req, False)
+        h.Send()
+        response = h.responseText
+        data = json.loads(response)
+        for layer in data['layers']:
+            name =  layer['name']
+            id = layer['id']
+            serviceURL2 = serviceURL + "/{0}".format(id)
+            agolURL = portalURL + '/portal/sharing/rest/content/users/' + portalUser + '/addItem'
+            params = {'f': 'json', 'url': serviceURL2, 'title': name, 'type': 'Feature Service', 'tags': tags + ',' + name}
+            pURL = agolURL + "?" + urllib.urlencode(params)
+            arcpy.AddMessage("Portal URL - " + pURL)
+            h.Open("POST",pURL, False)
+            # arcpy.AddMessage() #json.dumps(params))
+            h.Send(json.dumps(params))
+            response = h.responseText
+
+            try:
+                data = json.loads(response)
+                if 'error' in data:
+                    arcpy.AddError(data['error']['message'])
+                else:
+                    arcpy.AddMessage("Successfully added " + name + " as an item")
+            except:
+                arcpy.AddError("Error adding {0}: {1} {2}\n\t{3}".format(name, h.Status, h.StatusText, h.responseText))
+
+
 
         return
