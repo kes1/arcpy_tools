@@ -1,0 +1,89 @@
+import arcpy, re
+
+class Toolbox(object):
+    def __init__(self):
+        """Define the toolbox (the name of the toolbox is the name of the
+        .pyt file)."""
+        self.label = "ArcGIS Portal Windows Tools"
+        self.alias = ""
+
+
+        # List of tool classes associated with this toolbox
+        self.tools = [AddItems]
+
+
+class AddItems(object):
+    def __init__(self):
+        """Define the tool (tool name is the name of the class)."""
+        self.label = "Add Items to Portal"
+        self.description = "Add feature layer items from an ArcGIS Server MapService"
+        self.canRunInBackground = False
+
+    def getParameterInfo(self):
+        """Define parameter definitions"""
+        params = []
+
+        # URL to the Map Service, will authenticate using Integrated Windows Authentication.
+        params.append(arcpy.Parameter(
+        displayName="ArcGIS Server Map Service URL",
+        name = "inMapServiceURL",
+        datatype="GPString",
+        parameterType="Required",
+        direction="Input"
+        ))
+
+        # String for ArcGIS Portal, including the web adapter.  Will authenticate using Integrated Windows Authentication.
+        params.append(arcpy.Parameter(
+        displayName="ArcGIS Portal URL",
+        name = "inPortalURL",
+        datatype="GPString",
+        parameterType="Required",
+        direction="Input"
+        ))
+
+        # String for ArcGIS Portal, including the web adapter.  Will authenticate using Integrated Windows Authentication.
+        params.append(arcpy.Parameter(
+        displayName="Item Tags",
+        name = "inTagsCSV",
+        datatype="GPString",
+        parameterType="Optional",
+        direction="Input"
+        ))
+
+        return params
+
+    def isLicensed(self):
+        """Set whether tool is licensed to execute."""
+        return True
+
+    def updateParameters(self, parameters):
+        """Modify the values and properties of parameters before internal
+        validation is performed.  This method is called whenever a parameter
+        has been changed."""
+
+        return
+
+    def updateMessages(self, parameters):
+        """Modify the messages created by internal validation for each tool
+        parameter.  This method is called after internal validation."""
+
+
+        s_url_pattern = re.compile(r'^http[s]?://(?:.+)/MapServer$',re.IGNORECASE) # Basic Regex to keep form responsive.
+        if parameters[0].altered:
+            # Check that URL parameter matched a URL, ending in mapserver
+            if re.match(s_url_pattern, parameters[0].valueAsText):
+                parameters[0].clearMessage()
+            else:
+                parameters[0].setErrorMessage('Please specify a map service URL, e.g. http://myagsServer.co.uk/arcgis/myService/MapServer')
+
+        return
+
+    def execute(self, parameters, messages):
+        """The source code of the tool."""
+        try:
+            import win32com.client
+        except ImportError:
+            arcpy.AddError("Cannot load Win32 module.  Please install to enable integrated authentication with your ArcGIS Server")
+            return
+
+        return
