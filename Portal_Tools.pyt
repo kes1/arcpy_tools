@@ -108,13 +108,11 @@ class AddItems(object):
             name =  layer['name']
             id = layer['id']
             serviceURL2 = serviceURL + "/{0}".format(id)
-            agolURL = portalURL + '/portal/sharing/rest/content/users/' + portalUser + '/addItem'
+            agolURL = portalURL + '/sharing/rest/content/users/' + portalUser + '/addItem'
             params = {'f': 'json', 'url': serviceURL2, 'title': name, 'type': 'Feature Service', 'tags': tags + ',' + name}
             pURL = agolURL + "?" + urllib.urlencode(params)
-            arcpy.AddMessage("Portal URL - " + pURL)
             h.Open("POST",pURL, False)
-            # arcpy.AddMessage() #json.dumps(params))
-            h.Send(json.dumps(params))
+            h.Send()
             response = h.responseText
 
             try:
