@@ -83,13 +83,13 @@ class ConsolidateShapefiles(object):
         """The source code of the tool."""
         # Initialise Parameters
 
-        search_folder = parameters[0].valueAsText
+        self.search_folder = parameters[0].valueAsText
         filter_string = parameters[1].valueAsText
         out_gdb = parameters[2].valueAsText
         out_fc_name = parameters[3].valueAsText
 
         # Search for shapefiles
-        input_shapefiles = self.listShapefiles(search_folder, filter_string)
+        input_shapefiles = self.listShapefiles(self.search_folder, filter_string)
         if len(input_shapefiles) == 0:
             arcpy.AddError("No shapefiles found")
             return
@@ -123,10 +123,11 @@ class ConsolidateShapefiles(object):
         arcpy.AddMessage("Output spatial reference {0} ({1} {2})".format (out_spatRef.name, out_spatRef.factoryCode, out_spatRef.abbreviation))
         arcpy.SetProgressor("step", "Loading shapefiles to " + out_fc, 0, len(input_shapefiles))
         for in_shp in input_shapefiles:
-            arcpy.SetProgressorLabel("Loading {0}...".format(in_shp))
+            arcpy.SetProgressorLabel("Loading {0}...".format(in_shp.replace(self.search_folder + "\\","")))
             # Check spatial reference equal.
+            arcpy.AddMessage(" Loading {0}".format(in_shp.replace(self.search_folder + "\\","")))
             if not out_spatRef.name == arcpy.Describe(in_shp).spatialReference.name:
-                arcpy.AddError(" {0} Spatial Reference Mismatch - {1} ({2})".format(in_shp, arcpy.Describe(in_shp).spatialReference.name, arcpy.Describe(in_shp).spatialReference.abbreviation))
+                arcpy.AddWarning(" {0} Possible Spatial Reference Mismatch - {1} ({2})".format(os.path.basename(in_shp), arcpy.Describe(in_shp).spatialReference.name, arcpy.Describe(in_shp).spatialReference.abbreviation))
             # TODO - check schema/fields? #NiceToHave
 
             arcpy.Append_management(in_shp, out_fc, 'NO_TEST') #, fieldMappings, subtype)
