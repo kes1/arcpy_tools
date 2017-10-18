@@ -98,16 +98,39 @@ class ConsolidateShapefiles(object):
         else:
             arcpy.AddMessage(str(len(input_shapefiles)) + " input shapefiles found.")
 
-        # Add first shapefile as base feature class
+
         # Note that no transformation will take place
         # TODO - add a field for source file.
         out_fc = out_gdb + "\\" + out_fc_name
-        arcpy.CopyFeatures_management (input_shapefiles[0], out_gdb + "\\" + out_fc_name)
+        # Check if output FC exists.
+        if arcpy.Exists(out_fc):
+            # Append all data.
+            self.appendShapefiles(input_shapefiles, out_fc)
 
-        if len(input_shapefiles) > 1:
-            #arcpy.SetProgressor(type, "Merging shapefiles to " + out_fc_name, 1, len(input_shapefiles), 1)
-            arcpy.Append_management(input_shapefiles[1:], out_fc, 'NO_TEST') #, fieldMappings, subtype)
+        else:
+            # Create output feature class using first input shapefile
+            # WARNING - this approach will cause problems if schemas don't match exactly, e.g. a TEXT description field is longer in a subsequent shapefile.
+            arcpy.CopyFeatures_management (input_shapefiles[0], out_gdb + "\\" + out_fc_name)
+            if len(input_shapefiles) > 1:
+                # Append subsequent files.
+                self.appendShapefiles(input_shapefiles[1:], out_fc)
+                #
+
         return
+    def appendShapefiles(self, input_shapefiles, out_fc):
+        """ Simply runs append for the given shapefile list to target FC."""
+        out_spatRef = arcpy.Describe(out_fc).spatialReference
+        arcpy.AddMessage("Output spatial reference {0} ({1} {2})".format (out_spatRef.name, out_spatRef.factoryCode, out_spatRef.abbreviation))
+        arcpy.SetProgressor("step", "Loading shapefiles to " + out_fc, 0, len(input_shapefiles))
+        for in_shp in input_shapefiles:
+            arcpy.SetProgressorLabel("Loading {0}...".format(in_shp))
+            # Check spatial reference equal.
+            if not out_spatRef.name == arcpy.Describe(in_shp).spatialReference.name:
+                arcpy.AddError(" {0} Spatial Reference Mismatch - {1} ({2})".format(in_shp, arcpy.Describe(in_shp).spatialReference.name, arcpy.Describe(in_shp).spatialReference.abbreviation))
+            # TODO - check schema/fields? #NiceToHave
+
+            arcpy.Append_management(in_shp, out_fc, 'NO_TEST') #, fieldMappings, subtype)
+            arcpy.SetProgressorPosition()
 
     def listShapefiles(self, search_folder, filter_string):
         """Returns a list of shapefiles matching the input filename filter"""
